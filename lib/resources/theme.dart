@@ -3,14 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ColorsClass {
-  static const Color primaryTheme = Color(0xFFA40DEE);
-  static const Color secondaryTheme = Color(0xFF01DCD2);
+  static const Color primaryTheme = Color(0xFFFAF6F6);
+  static const Color secondaryTheme = Color(0xFFCA1551);
   static const Color dotIndicatorUnselected = Color(0xFFD9D9D9);
   static const Color themeGreen = Color(0xFF798C00);
   static const Color themeYellow = Color(0xFFFFC700);
   static const Color answerPopUpGreen = Color(0xFF8FA500);
   static const Color answerPopUpRed = Color(0xFFB3261E);
-  static const Color bg = Color(0xFFFEFBE3);
+  static const Color bg = Color(0xFFFAF6F6);
 
   static const Color lightgrey = Color(0xFF95938C);
   static const Color verylightgrey = Color(0xFFAFADA2);
@@ -43,7 +43,7 @@ class ColorsClass {
       colors: [Color(0xFFA40DEE), Color(0xFF01DCD2)]);
 
   static const Color offWhite = Color(0xFFFEFBE3);
-
+  static const Color text = Color(0xFF001514);
   static const Color black = Color(0xFF000000);
   static const Color textGreen = Color(0xFF82C000);
   static const Color textGrey = Color(0xFF535353);
@@ -57,7 +57,7 @@ class ColorsClass {
 class TextStylesClass {
   static TextStyle _style(
       double fontSize, double? fontHeight, FontWeight fontWeight,
-      {Color color = ColorsClass.textGrey,
+      {Color color = ColorsClass.text,
       FontStyle fontStyle = FontStyle.normal,
       TextDecoration decoration = TextDecoration.none}) {
     return GoogleFonts.poppins(
