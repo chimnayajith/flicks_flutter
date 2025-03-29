@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:toys_catalogue/resources/screen_util.dart';
 import 'package:toys_catalogue/resources/theme.dart';
 
-class PromotionBanner extends StatelessWidget {
+class StoreBanner extends StatelessWidget {
   final String imageUrl;
 
-  const PromotionBanner({
+  const StoreBanner({
     Key? key,
     required this.imageUrl,
   }) : super(key: key);

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:toys_catalogue/features/home/presentation/home_page.dart';
 import 'package:toys_catalogue/features/flicks/presentation/flicks_page.dart';
+import 'package:toys_catalogue/features/manage_store/presentation/manage_store_page.dart';
+import 'package:toys_catalogue/features/manage_store/presentation/my_rewards_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
 
 class MainPage extends StatefulWidget {
@@ -27,8 +29,8 @@ class MainPageState extends State<MainPage> {
         },
         children: const [
           HomePage(),
-          HomePage(),
-          HomePage(),
+          ManageStorePage(),
+          MyRewardsPage(),
           FlicksPage(),
           HomePage(),
         ],

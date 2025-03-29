@@ -18,9 +18,9 @@ class _SortingOptionsWidgetState extends State<SortingOptionsWidget> {
   final ScrollController _scrollController = ScrollController();
   // Gender options with image URLs
   final List<Map<String, String>> genderOptions = [
-    {'label': 'All', 'imageUrl': 'https://s3-alpha-sig.figma.com/img/c105/0881/d29596eedd32fd9fe24f3d68d1acfd61?Expires=1738540800&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=Ys-E27UTIO8WT5wR3mrrJXFEN2ZwA37cBuzxRrkdix9H6b0RgWLCXuXIVN7-jlvAx6VdBwrZsuIqeSTdgx1-UPpiYboHcl597x-6ON6tnSEtZhL6ykczkMTCdnkniJW39DCgDY7LqGjUJqP75U6-TGcfIL3tYPa-sdww1iDmOv58CcwRIwBQvwmSdEJ2bIbIKwjHS4ivTyHT8vwhr4EARyTvkZAdL5gkapJafoEEOXn7-WjMoAmxD-mKAxxK1eJm7YRlGhELTmEhFTe7lvZQrILrSHPmkrlHq4VcgzUKTclyY51a8UjDI5pV82aT2PMeVVfuRghh4UmH95BP27Fccw__'},
-    {'label': 'Boys', 'imageUrl': 'https://s3-alpha-sig.figma.com/img/3c04/3bba/258ca3787a633a06d09d878e9acfe1f1?Expires=1738540800&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=AYnAqF31Ix9ryFwIj3n8F10PSmk0HSu5jlPj3dqNUhE2SoVDU2IU81vKVaZtHvifh2cO-XE6LVv5~URaecADcEmENgc0WFqkmNMD78ZktIt-f0AGVw4qUh3mtQ0DEv81yTsCDnFnRxyDnqTMd0us7aGA-g3DnspwdPbqmxFeIGJ9eln3VLOegu2-UZE94hAMqxs8KUQxE2bz~rvds9KNEb5mzoK1YyEfJ1HYoblpCHW9Axp7ri-Y5st5cVODFfEH1qbnrJvi7lCerndYEamumXfs8J2M3OaF8S51CPA89DqTBvZTjlpmebHcIO6xks1wpI~kmbuOyPMPfrweifyZDQ__'},
-    {'label': 'Girls', 'imageUrl': 'https://s3-alpha-sig.figma.com/img/3d87/d672/caf6c488657e63e224a14652ee178489?Expires=1738540800&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=aB8RCkS9J-HVPdVFes9pUm9mClMTYCcsOda9-OCULjNPR4YH73ToZ0bmR73uZ7fGH4i21i4~zU88-f-5dRuyg0zLb0LfMNQj92qqfAjLa3tQr7ab-FaNS9XASFasAqIrlk50Gh3fPHqBG6CcvnOhxLe3js~nmBXFtZm3BSUNKqKba4HcsKOVhx2cSWVSlI6f-b3qqP6ALKCu5ECtnN910lHkn0SYuhPBigx8sJTG71ACNiheYcb7ehan~y-vpoSOC~ldA6yLF~Lmpu~WEu7m2emzx4W8RLjsCqvwY7UpHnjA426ZXF5JYBLfwCgg2hWH5MevePBePsZZYRnEEAbABA__'},
+    {'label': 'All', 'imageUrl': 'https://flickscatalogue.s3.eu-north-1.amazonaws.com/assets/unisex.png'},
+    {'label': 'Boys', 'imageUrl': 'https://flickscatalogue.s3.eu-north-1.amazonaws.com/assets/male.png'},
+    {'label': 'Girls', 'imageUrl': 'https://flickscatalogue.s3.eu-north-1.amazonaws.com/assets/female.png'},
   ];
 
   // Category options
@@ -34,12 +34,12 @@ class _SortingOptionsWidgetState extends State<SortingOptionsWidget> {
     'Action Figures'
   ];
   final allProducts = List.generate(
-      30, // You can change this number based on how many products you want to generate
-      (index) => {
-        'name': 'Product $index',
-        'imageUrl': 'https://placehold.co/200x250.png', // Placeholder image URL
-      },
-    );
+    30, // Number of products to generate
+    (index) => {
+      'name': 'Product $index',
+      'imageUrl': 'https://kidztribe.com/cdn/shop/files/${200 + index}.png', // Updated image URL
+    },
+  );
   Widget _buildGenderOption(String label, String imageUrl) {
   bool isSelected = selectedGender == label;
   return GestureDetector(

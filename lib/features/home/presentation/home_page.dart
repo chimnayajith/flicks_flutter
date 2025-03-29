@@ -1,27 +1,93 @@
 import 'package:flutter/material.dart';
-import 'package:toys_catalogue/features/home/presentation/widgets/promotion.dart';
+import 'package:toys_catalogue/features/home/data/product_service.dart';
+import 'package:toys_catalogue/features/home/data/shop_service.dart';
+import 'package:toys_catalogue/features/home/domain/models/product_model.dart';
+import 'package:toys_catalogue/features/home/presentation/widgets/store_banner.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/search_box.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/sorting_options_widget.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/top_products_widget.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/trending_toys.dart';
-
+import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
-class HomePage extends StatelessWidget {
+import 'package:toys_catalogue/routes/route_names.dart';
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // hardcoded value for trending toys
-    final trendingToys = List.generate(
-      10,
-      (index) => {
-        'imageUrl': 'https://placehold.co/200x250.png',
-        'title': 'Toy $index',
-      },
-    );
+  State<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends State<HomePage> {
+  final ProductService _productService = ProductService();
+  final ShopService _shopService = ShopService();
+  
+  List<Product> trendingProducts = [];
+  List<Product> topProducts = [];
+  String? shopBannerUrl;
+  String? shopName;
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      // Fetch products and shop banner in parallel
+      final results = await Future.wait([
+        _productService.getTrendingProducts(),
+        _productService.getTopProducts(),
+        _shopService.getShopBanner(),
+      ]);
+
+      setState(() {
+        trendingProducts = results[0] as List<Product>;
+        topProducts = results[1] as List<Product>;
+        
+        // Handle shop banner
+        final shopData = results[2] as Map<String, dynamic>;
+        shopBannerUrl = shopData['banner_url'];
+        shopName = shopData['shop_name'];
+        
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load data. Please try again.';
+        isLoading = false;
+      });
+    }
+  }
+
+  // Convert Product to the map format expected by widgets
+  List<Map<String, String>> _convertProductsToMap(List<Product> products, String source) {
+    print("Converting ${products.length} products to map for source: $source");
     
+    return products.map((product) {
+      final map = {
+        'imageUrl': product.imageUrl ?? 'https://via.placeholder.com/100',
+        'title': product.title,
+        'id': product.id.toString(),
+        'videoUrl': product.videoUrl ?? '',
+        'source': source,
+        'description': product.description ?? '',
+      };
+      print("Converted product: $map");
+      return map;
+    }).toList();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
       appBar: AppBar(
@@ -45,96 +111,75 @@ class HomePage extends StatelessWidget {
         ),
       ),
       drawer: Drawer(
-        child: Container(
-          color: ColorsClass.secondaryTheme,
+        // [Existing drawer code]
+      ),
+      body: RefreshIndicator(
+        onRefresh: _fetchData,
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Drawer header
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: ColorsClass.secondaryTheme,
+              if (shopBannerUrl != null)
+                StoreBanner(imageUrl: shopBannerUrl!),
+              
+              if (shopBannerUrl == null)
+                StoreBanner(
+                  imageUrl: 'https://via.placeholder.com/1000x250?text=Welcome',
                 ),
-                child: const Text(
-                  'Menu',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700
-                  ),
-                ),
-              ),
 
-              // Menu items
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    ListTile(
-                      title: const Text('My Store', style: TextStyle(color: Colors.white, fontSize:20, fontWeight: FontWeight.w500)),
-                      onTap: () {
-                        // Handle My Store action
-                      },
+              // Loading state
+              if (isLoading)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(
+                      color: ColorsClass.secondaryTheme,
                     ),
-                    ListTile(
-                      title: const Text('Manage My Store', style: TextStyle(color: Colors.white, fontSize:20, fontWeight: FontWeight.w500)),
-                      onTap: () {
-                        // Handle Manage My Store action
-                      },
-                    ),
-                    ListTile(
-                      title: const Text('Distributors', style: TextStyle(color: Colors.white, fontSize:20, fontWeight: FontWeight.w500)),
-                      onTap: () {
-                        // Handle Distributors action
-                      },
-                    ),
-                    ListTile(
-                      title: const Text('Brands', style: TextStyle(color: Colors.white, fontSize:20, fontWeight: FontWeight.w500)),
-                      onTap: () {
-                        // Handle Brands action
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
 
-              // Bottom menu items
-              Column(
-                children: [
-                  ListTile(
-                    title: const Text('My Subscription', style: TextStyle(color: Colors.white, fontSize:20, fontWeight: FontWeight.w500)),
-                    onTap: () {
-                      // Handle My Subscription action
-                    },
+              // Error message
+              if (errorMessage != null)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          errorMessage!,
+                          style: TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _fetchData,
+                          child: Text('Retry'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorsClass.secondaryTheme,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  ListTile(
-                    title: const Text('Contacts', style: TextStyle(color: Colors.white, fontSize:20, fontWeight: FontWeight.w500)),
-                    onTap: () {
-                      // Handle Contacts action
-                    },
-                  ),
-                ],
-              ),
+                ),
+
+              // Content when loaded
+              if (!isLoading && errorMessage == null) ...[
+                // Trending Toys Section
+                TrendingToysSection(
+                  trendingToys: _convertProductsToMap(trendingProducts,'trending'),
+                ),
+                
+                // Top Products List
+                TopProductsList(
+                  topProducts: _convertProductsToMap(topProducts, 'top'),
+                ),
+
+                // Sorting section
+                SortingOptionsWidget(),
+              ],
             ],
           ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            PromotionBanner(
-                imageUrl: 'https://s3-alpha-sig.figma.com/img/5965/a8b9/c637bd224a88ee5924a5a1cf3d632b6b?Expires=1740355200&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=So3OtE76YJYuKjDF8R0LTOZWgvUD4N6tSzynGDBLcJIuku9wVsNVYzewg~oiEpQ1ymrPXutOCFCN~m-5dTj-nfCvO6cZQmhfXe4thcXMQRsnAAYKScFhfdVVC0WkEbR6PjtKdt69dtjlOrIm1gU7wiRA07UCn8EkilEIzcdM724IqDxHktKLUK6UVEJo4q0M5pYz25pm8jTncYZxjSIDGLY9Qivb2IgPVM5oMh16tfk3doF~~tr~t-EsR5A66e-vwrT~4gHlk8nguo1tOWfsUp3G9d9ha9oI6nDp0uE0Eqly0nV4hfaevFyd38gII1egapf9tEFX9fRdxRB43mpntw__', // LEGO image URL
-              ),
-
-            // Trending Toys Section
-           TrendingToysSection(trendingToys: trendingToys),
-           TopProductsList(topProducts: trendingToys),
-
-            // Sorting section
-            SortingOptionsWidget(),
-
-          ],
         ),
       ),
     );

@@ -8,33 +8,41 @@ class MyStaffPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorsClass.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: ColorsClass.text),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'My Staff',
+          style: TextStylesClass.h4.copyWith(
+            color: ColorsClass.text,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                '3/3',
+                style: TextStylesClass.s1.copyWith(
+                  color: ColorsClass.secondaryTheme,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'My Staff',
-                    style: TextStylesClass.h4.copyWith(
-                      color: ColorsClass.text,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '3/3',
-                    style: TextStylesClass.s1.copyWith(
-                      color: ColorsClass.secondaryTheme,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              
               const SizedBox(height: 40),
               
               // Staff Avatars Row

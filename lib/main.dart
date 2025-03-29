@@ -15,7 +15,8 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       builder: (_, child) {
         return MaterialApp(
-          initialRoute: RouteNames.mainPage,
+          debugShowCheckedModeBanner: false, 
+          initialRoute: RouteNames.login,
           onGenerateRoute: Routes.generateRoute,
         );
       },

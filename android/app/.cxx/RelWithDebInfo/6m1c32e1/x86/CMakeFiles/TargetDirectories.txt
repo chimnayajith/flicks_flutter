@@ -1,0 +1,2 @@
+/home/chimnayyyy/Code/flicks_flutter/android/app/.cxx/RelWithDebInfo/6m1c32e1/x86/CMakeFiles/edit_cache.dir
+/home/chimnayyyy/Code/flicks_flutter/android/app/.cxx/RelWithDebInfo/6m1c32e1/x86/CMakeFiles/rebuild_cache.dir

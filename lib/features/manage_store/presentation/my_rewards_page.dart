@@ -14,10 +14,7 @@ class MyRewardsPage extends StatelessWidget {
         centerTitle: true,
         backgroundColor: ColorsClass.primaryTheme,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: ColorsClass.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false, // Remove back button
       ),
       body: SingleChildScrollView(
         child: Padding(

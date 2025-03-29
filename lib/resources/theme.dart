@@ -127,11 +127,6 @@ class TextStylesClass {
 }
 
 ThemeData themedata = ThemeData(
-  cardTheme: CardTheme(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-    ),
-  ),
   primaryColor: ColorsClass.primaryTheme,
   scaffoldBackgroundColor: ColorsClass.bg,
   textTheme: TextTheme(

@@ -1,3 +1,4 @@
+import 'package:toys_catalogue/features/auth/presentation/login_page.dart';
 import 'package:toys_catalogue/features/flicks/presentation/flicks_page.dart';
 import 'package:toys_catalogue/features/all_distributors/presentation/all_distributor_page.dart';
 import 'package:toys_catalogue/features/brands/presentation/brands_page.dart';
@@ -17,12 +18,17 @@ import 'package:flutter/material.dart';
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case RouteNames.login:
+        return MaterialPageRoute(builder: (_) => const LoginPage());
       case RouteNames.mainPage:
         return MaterialPageRoute(builder: (_) => MainPage());
       case RouteNames.homePage:
         return MaterialPageRoute(builder: (_) => HomePage());
       case RouteNames.flicksPage:
-        return MaterialPageRoute(builder: (_) => FlicksPage());
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => FlicksPage(args: args),
+        );
       case RouteNames.myStaffPage:
         return MaterialPageRoute(builder: (_) => MyStaffPage());
       case RouteNames.subscriptionsPage:
@@ -40,7 +46,10 @@ class Routes {
       case RouteNames.manageStorePage:
         return MaterialPageRoute(builder: (_) => const ManageStorePage());
       case RouteNames.productDetailsPage:
-        return MaterialPageRoute(builder: (_) => const ProductDetailsPage());
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => ProductDetailsPage(args: args),
+        );
       case RouteNames.myRewardsPage:
         return MaterialPageRoute(builder: (_) => const MyRewardsPage());
       case RouteNames.myInventoryPage:

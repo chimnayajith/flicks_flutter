@@ -3,6 +3,7 @@ class RouteNames {
   // example : static const String signIn = "sign_in";
   // add route names:
   // example : static const String signIn = "sign_in";
+  static const String login = "login";
   static const String mainPage = "mainPage";
   static const String homePage = "homePage";
   static const String flicksPage = "flicksPage";
@@ -16,5 +17,5 @@ class RouteNames {
   static const String manageStorePage = "manageStorePage";
   static const String productDetailsPage = "productDetailsPage";
   static const String myRewardsPage = "myRewardsPage";
-  static const String myInventoryPage = "myInventoryPage";
+  static const String myInventoryPage = "myInventoryPage"; // TODO: Implement later not used now
 }
