@@ -35,15 +35,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
         _errorMessage = null;
       });
 
-      // Get the stored user information
       final prefs = await SharedPreferences.getInstance();
       _username = prefs.getString('username');
       _role = prefs.getString('role');
 
-      // Fetch user profile from API
       final profileResponse = await _shopService.getUserProfile();
       
-      // Fetch shop details as well
       final shop = await _shopService.getShopDetails();
 
       setState(() {
@@ -66,12 +63,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
     switch (role.toLowerCase()) {
       case 'owner':
         return 'Store Owner';
-      case 'manager':
-        return 'Store Manager';
       case 'helper':
-        return 'Sales Associate';
+        return 'Sales Staff';
       default:
-        return 'Staff Member';
+        return 'Sales Staff';
     }
   }
 
@@ -89,7 +84,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           IconButton(
             icon: const Icon(Icons.edit, color: ColorsClass.secondaryTheme),
             onPressed: () {
-              // Navigate to edit profile screen
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edit profile functionality coming soon'))
               );
@@ -171,7 +165,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       
                       // User Name and Role
                       Text(
-                        _userProfile?['full_name'] ?? _username ?? 'User',
+                        (_userProfile?['first_name'] != null && _userProfile?['last_name'] != null) 
+                          ? "${_userProfile?['first_name']} ${_userProfile?['last_name']}"
+                          : _username ?? 'User',
                         style: TextStylesClass.s1.copyWith(
                           color: ColorsClass.black,
                           fontWeight: FontWeight.bold,
@@ -292,6 +288,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             ),
                             SizedBox(height: 15.h),
                             _buildInfoTile(
+                              icon: Icons.account_circle,
+                              title: 'Username',
+                              value: _username ?? _userProfile?['username'] ?? 'Not provided',
+                            ),
+                            _buildInfoTile(
                               icon: Icons.email,
                               title: 'Email',
                               value: _userProfile?['email'] ?? 'Not provided',
@@ -300,16 +301,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               icon: Icons.phone,
                               title: 'Phone',
                               value: _userProfile?['phone'] ?? 'Not provided',
-                            ),
-                            _buildInfoTile(
-                              icon: Icons.location_on,
-                              title: 'Address',
-                              value: _userProfile?['address'] ?? 'Not provided',
-                            ),
-                            _buildInfoTile(
-                              icon: Icons.account_circle,
-                              title: 'Username',
-                              value: _username ?? _userProfile?['username'] ?? 'Not provided',
                             ),
                           ],
                         ),

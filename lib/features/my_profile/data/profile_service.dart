@@ -9,7 +9,7 @@ class ProfileService {
   
   Future<Map<String, String>> _getAuthHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token'); // Match the key used in ShopService
+    final token = prefs.getString('access_token');
     
     if (token == null) {
       throw Exception('Authentication token not found');
@@ -61,38 +61,5 @@ class ProfileService {
     } catch (e) {
       throw Exception('Error fetching shop details: $e');
     }
-  }
-  
-
-  Map<String, dynamic> _getMockUserProfile() {
-    return {
-      'username': 'johndoe',
-      'email': 'john.doe@example.com',
-      'full_name': 'John Doe',
-      'phone': '9876543210',
-      'address': '123 Main St, Mumbai',
-      'store_name': 'Kids Toys Store',
-      'membership_since': '2023-05-15'
-    };
-  }
-  
-
-  Shop getMockShopDetails() {
-    return Shop(
-      id: 1,
-      name: 'Kids Toys Store',
-      description: 'The best toy store in town',
-      address: '123 Main St, Mumbai',
-      phone: '9876543210',
-      email: 'info@kidstoysstore.com',
-      bannerUrl: "https://flickscatalogue.s3.amazonaws.com/shops/banners/thambikada.jpg",
-      owner: ShopOwner(
-        id: 1,
-        username: 'johndoe',
-        name: 'John Doe',
-      ),
-      subscription: null,
-      isOwner: true,
-    );
   }
 }
