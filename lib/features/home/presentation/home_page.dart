@@ -7,9 +7,7 @@ import 'package:toys_catalogue/features/home/presentation/widgets/search_box.dar
 import 'package:toys_catalogue/features/home/presentation/widgets/sorting_options_widget.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/top_products_widget.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/trending_toys.dart';
-import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
-import 'package:toys_catalogue/routes/route_names.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,7 +19,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ProductService _productService = ProductService();
   final ShopService _shopService = ShopService();
-  
+
   List<Product> trendingProducts = [];
   List<Product> topProducts = [];
   String? shopBannerUrl;
@@ -52,12 +50,12 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         trendingProducts = results[0] as List<Product>;
         topProducts = results[1] as List<Product>;
-        
+
         // Handle shop banner
         final shopData = results[2] as Map<String, dynamic>;
         shopBannerUrl = shopData['banner_url'];
         shopName = shopData['shop_name'];
-        
+
         isLoading = false;
       });
     } catch (e) {
@@ -69,9 +67,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Convert Product to the map format expected by widgets
-  List<Map<String, String>> _convertProductsToMap(List<Product> products, String source) {
+  List<Map<String, String>> _convertProductsToMap(
+    List<Product> products,
+    String source,
+  ) {
     print("Converting ${products.length} products to map for source: $source");
-    
+
     return products.map((product) {
       final map = {
         'imageUrl': product.imageUrl ?? 'https://via.placeholder.com/100',
@@ -92,26 +93,131 @@ class _HomePageState extends State<HomePage> {
       extendBody: true,
       appBar: AppBar(
         leading: Builder(
-          builder: (context) => IconButton(
-              icon: const Icon(
-                Icons.menu, 
-                color: ColorsClass.text,
-                size: 32,
-                ),
-              onPressed: () {
-                 Scaffold.of(context).openDrawer();
-              },
-            ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu, color: ColorsClass.text, size: 32),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              ),
         ),
         backgroundColor: ColorsClass.secondaryTheme,
-        title: Row(
-          children: [
-            Expanded(child: SearchBox()),
-          ],
-        ),
+        title: Row(children: [Expanded(child: SearchBox())]),
       ),
       drawer: Drawer(
-        // [Existing drawer code]
+        child: Container(
+          color: ColorsClass.secondaryTheme,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Drawer header
+              DrawerHeader(
+                decoration: BoxDecoration(color: ColorsClass.secondaryTheme),
+                child: const Text(
+                  'Menu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              // Menu items
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    ListTile(
+                      title: const Text(
+                        'My Store',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        // Handle My Store action
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(
+                        'Manage My Store',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        // Handle Manage My Store action
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(
+                        'Distributors',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        // Handle Distributors action
+                      },
+                    ),
+                    ListTile(
+                      title: const Text(
+                        'Brands',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        // Handle Brands action
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              // Bottom menu items
+              Column(
+                children: [
+                  ListTile(
+                    title: const Text(
+                      'My Subscription',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onTap: () {
+                      // Handle My Subscription action
+                    },
+                  ),
+                  ListTile(
+                    title: const Text(
+                      'Contacts',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onTap: () {
+                      // Handle Contacts action
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _fetchData,
@@ -119,9 +225,8 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (shopBannerUrl != null)
-                StoreBanner(imageUrl: shopBannerUrl!),
-              
+              if (shopBannerUrl != null) StoreBanner(imageUrl: shopBannerUrl!),
+
               if (shopBannerUrl == null)
                 StoreBanner(
                   imageUrl: 'https://via.placeholder.com/1000x250?text=Welcome',
@@ -153,10 +258,10 @@ class _HomePageState extends State<HomePage> {
                         SizedBox(height: 10),
                         ElevatedButton(
                           onPressed: _fetchData,
-                          child: Text('Retry'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ColorsClass.secondaryTheme,
                           ),
+                          child: Text('Retry'),
                         ),
                       ],
                     ),
@@ -167,9 +272,12 @@ class _HomePageState extends State<HomePage> {
               if (!isLoading && errorMessage == null) ...[
                 // Trending Toys Section
                 TrendingToysSection(
-                  trendingToys: _convertProductsToMap(trendingProducts,'trending'),
+                  trendingToys: _convertProductsToMap(
+                    trendingProducts,
+                    'trending',
+                  ),
                 ),
-                
+
                 // Top Products List
                 TopProductsList(
                   topProducts: _convertProductsToMap(topProducts, 'top'),
