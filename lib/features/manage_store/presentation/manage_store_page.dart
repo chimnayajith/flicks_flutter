@@ -105,10 +105,6 @@ class _ManageStorePageState extends State<ManageStorePage> {
                                   },
                                 ),
                                 CustomCard(
-                                  title: "My Orders",
-                                  onTap: () {},
-                                ),
-                                CustomCard(
                                   title: "My Rewards",
                                   onTap: () {
                                     final mainPageState = context.findAncestorStateOfType<MainPageState>();
@@ -126,7 +122,7 @@ class _ManageStorePageState extends State<ManageStorePage> {
                               ],
                             ),
                             Padding(
-                              padding: EdgeInsets.only(top: 20.h),
+                              padding: EdgeInsets.only(top: 50.h),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
