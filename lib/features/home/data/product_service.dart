@@ -120,4 +120,27 @@ class ProductService {
       rethrow; // Rethrow to handle in UI
     }
   }
+
+  Future<List<String>> getProductCategories() async {
+  try {
+    final headers = await _getAuthHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/products/categories/'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      // Parse the response
+      final List<dynamic> data = jsonDecode(response.body);
+      
+      // Convert the dynamic list to a list of strings
+      return data.map((category) => category.toString()).toList();
+    } else {
+      throw Exception('Failed to load categories: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching categories: $e');
+    throw Exception('Error fetching categories: $e');
+  }
+}
 }
