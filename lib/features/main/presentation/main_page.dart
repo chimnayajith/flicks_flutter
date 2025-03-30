@@ -3,10 +3,11 @@ import 'package:toys_catalogue/features/home/presentation/home_page.dart';
 import 'package:toys_catalogue/features/flicks/presentation/flicks_page.dart';
 import 'package:toys_catalogue/features/manage_store/presentation/manage_store_page.dart';
 import 'package:toys_catalogue/features/manage_store/presentation/my_rewards_page.dart';
+import 'package:toys_catalogue/features/my_profile/presentation/my_profile_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({Key? key}) : super(key: key);
+  const MainPage({super.key});
 
   @override
   MainPageState createState() => MainPageState();
@@ -32,7 +33,7 @@ class MainPageState extends State<MainPage> {
           ManageStorePage(),
           MyRewardsPage(),
           FlicksPage(),
-          HomePage(),
+          UserProfilePage(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
