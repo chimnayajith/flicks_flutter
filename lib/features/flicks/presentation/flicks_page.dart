@@ -16,25 +16,34 @@ class FlicksPage extends StatefulWidget {
 }
 
 class _FlicksPageState extends State<FlicksPage> {
-  // Remove hardcoded videoPaths and use product data instead
-  
-  // Default fallback URL
   final String fallbackVideoUrl = 'https://flickscatalogue.s3.amazonaws.com/products/flicks/flick1.mp4';
   
   final ProductService _productService = ProductService();
-  List<Product> _filteredProducts = [];
+  List<Product> _sectionProducts = [];
+  int _currentProductIndex = 0;
   bool _isLoading = false;
+  bool _enableSectionScroll = false;
+  PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
-    _fetchRelatedProducts();
+    _loadSectionProducts();
   }
   
-  Future<void> _fetchRelatedProducts() async {
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _loadSectionProducts() async {
     if (widget.args == null) return;
     
     final source = widget.args!['source'];
+    final productId = widget.args!['productId'];
+    _enableSectionScroll = widget.args!['enableSectionScroll'] ?? false;
+    
     if (source == null) return;
     
     setState(() {
@@ -42,18 +51,46 @@ class _FlicksPageState extends State<FlicksPage> {
     });
     
     try {
+      List<Product> products = [];
+      
       if (source == 'trending') {
-        final trending = await _productService.getTrendingProducts();
-        setState(() {
-          _filteredProducts = trending.where((p) => p.videoUrl != null && p.videoUrl!.isNotEmpty).toList();
-          _isLoading = false;
-        });
+        products = await _productService.getTrendingProducts();
       } else if (source == 'top') {
-        final top = await _productService.getTopProducts();
-        setState(() {
-          _filteredProducts = top.where((p) => p.videoUrl != null && p.videoUrl!.isNotEmpty).toList();
-          _isLoading = false;
-        });
+        products = await _productService.getTopProducts();
+      } else if (source == 'filtered') {
+        if (widget.args != null && widget.args!.containsKey('filterParams')) {
+          final filterParams = widget.args!['filterParams'] as Map<String, dynamic>?;
+          if (filterParams != null) {
+            products = await _productService.getFilteredProducts(
+              gender: filterParams['gender'],
+              ageGroup: filterParams['age_group'],
+              category: filterParams['category'],
+            );
+          } else {
+            products = await _productService.getAllProducts(page: 1, pageSize: 20);
+          }
+        } else {
+          products = await _productService.getAllProducts(page: 1, pageSize: 20);
+        }
+      } else {
+        products = await _productService.getAllProducts(page: 1, pageSize: 20);
+      }
+      
+      // Only include products with videos
+      products = products.where((p) => p.videoUrl != null && p.videoUrl!.isNotEmpty).toList();
+      
+      // Find the index of the current product
+      int index = products.indexWhere((p) => p.id.toString() == productId);
+      
+      setState(() {
+        _sectionProducts = products;
+        _currentProductIndex = index >= 0 ? index : 0;
+        _isLoading = false;
+      });
+      
+      // Initialize page controller with current index
+      if (_sectionProducts.isNotEmpty && _enableSectionScroll) {
+        _pageController = PageController(initialPage: _currentProductIndex);
       }
     } catch (e) {
       print("Error fetching related products: $e");
@@ -65,18 +102,15 @@ class _FlicksPageState extends State<FlicksPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Check if we have a specific video URL to play
     final String? videoUrl = widget.args?['videoUrl'] as String?;
     final String? title = widget.args?['title'] as String?;
     final String? imageUrl = widget.args?['imageUrl'] as String?;
     final String? description = widget.args?['description'] as String?;
     
-    // If we have a specific videoUrl, show it
-    if (videoUrl != null && videoUrl.isNotEmpty) {
+    if (!_enableSectionScroll && videoUrl != null && videoUrl.isNotEmpty) {
       return _buildSingleVideoPage(videoUrl, title, imageUrl, description);
     }
     
-    // Otherwise use the normal flicks page with fetched product videos
     return WillPopScope(
       onWillPop: () async {
         final mainPageState = context.findAncestorStateOfType<MainPageState>();
@@ -92,10 +126,9 @@ class _FlicksPageState extends State<FlicksPage> {
           bottom: false,
           child: Stack(
             children: [
-              // Replace existing PageView with a new one that uses _filteredProducts
               _isLoading 
               ? Center(child: CircularProgressIndicator(color: ColorsClass.secondaryTheme))
-              : _filteredProducts.isEmpty 
+              : _sectionProducts.isEmpty 
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -110,20 +143,26 @@ class _FlicksPageState extends State<FlicksPage> {
                     ),
                   )
                 : PageView.builder(
+                    controller: _pageController,
                     scrollDirection: Axis.vertical,
-                    itemCount: _filteredProducts.length,
+                    itemCount: _sectionProducts.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentProductIndex = index;
+                      });
+                    },
                     itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
+                      final product = _sectionProducts[index];
                       return _buildNetworkVideoPlayer(
                         product.videoUrl ?? fallbackVideoUrl,
                         title: product.title,
                         imageUrl: product.imageUrl,
                         description: product.description,
+                        productId: product.id.toString(),
                       );
                     },
                   ),
               
-              // Back Button
               Positioned(
                 top: 16,
                 left: 16,
@@ -134,10 +173,7 @@ class _FlicksPageState extends State<FlicksPage> {
                     size: 28,
                   ),
                   onPressed: () {
-                    final mainPageState = context.findAncestorStateOfType<MainPageState>();
-                    if (mainPageState != null) {
-                      mainPageState.pageController.jumpToPage(0);
-                    }
+                    Navigator.pop(context);
                   },
                 ),
               ),
@@ -160,17 +196,15 @@ class _FlicksPageState extends State<FlicksPage> {
         bottom: false,
         child: Stack(
           children: [
-            // Video
             Center(
-              child: _buildNetworkVideoPlayer(
-                videoUrl, 
-                title: title ?? 'Product', 
+              child: NetworkVideoPage(
+                videoUrl: videoUrl.isEmpty ? fallbackVideoUrl : videoUrl,
+                title: title,
                 imageUrl: imageUrl,
                 description: description,
               ),
             ),
             
-            // Back Button
             Positioned(
               top: 16,
               left: 16,
@@ -193,274 +227,18 @@ class _FlicksPageState extends State<FlicksPage> {
   
   Widget _buildNetworkVideoPlayer(
     String videoUrl, 
-    {String? title, String? imageUrl, String? description}
+    {String? title, String? imageUrl, String? description, String? productId}
   ) {
     return NetworkVideoPage(
       videoUrl: videoUrl.isEmpty ? fallbackVideoUrl : videoUrl,
       title: title,
       imageUrl: imageUrl,
       description: description,
-      productId: widget.args?['productId'] as String?,
+      productId: productId,
     );
   }
 }
 
-class VideoPage extends StatefulWidget {
-  final String videoPath;
-
-  const VideoPage({Key? key, required this.videoPath}) : super(key: key);
-
-  @override
-  _VideoPageState createState() => _VideoPageState();
-}
-
-// Keep the existing VideoPage implementation
-class _VideoPageState extends State<VideoPage> {
-  // Keep your existing code
-  late VideoPlayerController _controller;
-  late Future<void> _initializeVideoPlayerFuture;
-  bool _showControls = false;
-  
-  bool _isDragging = false;
-  bool _isSeeking = false;
-
-  final double _dragThreshold = 50.0;
-  double _dragDistance = 0.0;
-
-  void _startSeeking() {
-    setState(() {
-      _isDragging = true;
-      _isSeeking = true;
-    });
-  }
-
-  void _stopSeeking() {
-    setState(() {
-      _isDragging = false;
-      _isSeeking = false;
-    });
-  }
-  
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.asset(widget.videoPath);
-    _initializeVideoPlayerFuture = _controller.initialize();
-    _controller.setLooping(true);
-    _controller.play();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _togglePlayPause() {
-    setState(() {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-      } else {
-        _controller.play();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Keep your existing build method
-    return GestureDetector(
-      onHorizontalDragUpdate: (details) {
-        setState(() {
-          _dragDistance += details.delta.dx;
-        });
-      },
-      onHorizontalDragEnd: (details) {
-        if (_dragDistance.abs() > _dragThreshold) {
-          if (_dragDistance < 0) { // Left swipe
-            Navigator.pushNamed(context, RouteNames.productDetailsPage);
-          }
-        }
-        setState(() {
-          _dragDistance = 0;
-        });
-      },
-      child: Container(
-        color: Colors.black,
-        child: Stack(
-          children: [
-            Center(
-              child: AspectRatio(
-                aspectRatio: 9/16,
-                child: Stack(
-                  children: [
-                    // Video Player
-                    GestureDetector(
-                      onTap: _togglePlayPause,
-                      child: FutureBuilder<void>(
-                        future: _initializeVideoPlayerFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.done) {
-                            return VideoPlayer(_controller);
-                          } else {
-                            return const Center(
-                              child: SizedBox(
-                                height: 30,
-                                width: 30,
-                                child: CircularProgressIndicator(
-                                  color: ColorsClass.secondaryTheme,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
-
-                    // Product Info (inside AspectRatio)
-                    Positioned(
-                      bottom: 20,
-                      left: 16,
-                      right: 16,
-                      child: GestureDetector(
-                        onTap:(){
-                            Navigator.pushNamed(context, RouteNames.productDetailsPage);
-                        },
-                        child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Name and Avatar Row
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundImage: NetworkImage('company_logo_url'),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Product Name',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          // Description
-                          Text(
-                            'Product description that can be longer and more detailed...',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 17,
-                            ),
-                          ),
-                        ],
-                      ),
-                      )
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            GestureDetector(
-              onTap: _togglePlayPause,
-              child: ValueListenableBuilder(
-                valueListenable: _controller,
-                builder: (context, VideoPlayerValue value, child) {
-                  return AnimatedOpacity(
-                    opacity: !value.isPlaying ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Center(
-                      child: Icon(
-                        value.isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 70,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
-            // Progress Bar
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onHorizontalDragStart: (_) => _startSeeking(),
-                    onHorizontalDragEnd: (_) => _stopSeeking(),
-                    onHorizontalDragCancel: () => _stopSeeking(),
-                    onTapDown: (_) => _startSeeking(),
-                    onTapUp: (_) => _stopSeeking(),
-                    onTapCancel: () => _stopSeeking(),
-                    child: Container(
-                      height: _isSeeking ? 60 : 20,
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            height: _isSeeking ? 38 : 6,
-                            child: VideoProgressIndicator(
-                              _controller,
-                              allowScrubbing: true,
-                              colors: VideoProgressColors(
-                                playedColor: ColorsClass.secondaryTheme,
-                                bufferedColor: Colors.white.withOpacity(0.3),
-                                backgroundColor: Colors.white.withOpacity(0.1),
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                          ValueListenableBuilder(
-                            valueListenable: _controller,
-                            builder: (context, VideoPlayerValue value, child) {
-                              final position = value.position.inMilliseconds /
-                                  value.duration.inMilliseconds;
-                              return Positioned(
-                                left: constraints.maxWidth * position - 10,
-                                bottom: _isSeeking ? 30 : 0,
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  width: _isSeeking ? 20 : 10,
-                                  height: _isSeeking ? 20 : 10,
-                                  decoration: BoxDecoration(
-                                    color: ColorsClass.secondaryTheme,
-                                    shape: _isSeeking ? BoxShape.rectangle : BoxShape.circle,
-                                    borderRadius: _isSeeking ? BorderRadius.circular(4) : null,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// New class for network videos
 class NetworkVideoPage extends StatefulWidget {
   final String videoUrl;
   final String? title;
@@ -485,10 +263,8 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
   late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
   bool _showControls = false;
-  
   bool _isDragging = false;
   bool _isSeeking = false;
-
   final double _dragThreshold = 50.0;
   double _dragDistance = 0.0;
 
@@ -541,7 +317,8 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
       },
       onHorizontalDragEnd: (details) {
         if (_dragDistance.abs() > _dragThreshold) {
-          if (_dragDistance < 0 && widget.productId != null) { // Left swipe
+          if (_dragDistance < 0 && widget.productId != null) {
+            _controller.pause();
             Navigator.pushNamed(
               context, 
               RouteNames.productDetailsPage,
@@ -562,7 +339,6 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
                 aspectRatio: 9/16,
                 child: Stack(
                   children: [
-                    // Video Player
                     GestureDetector(
                       onTap: _togglePlayPause,
                       child: FutureBuilder<void>(
@@ -586,14 +362,14 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
                       ),
                     ),
 
-                    // Product Info (inside AspectRatio)
                     Positioned(
                       bottom: 20,
                       left: 16,
                       right: 16,
                       child: GestureDetector(
-                        onTap:(){
+                        onTap: () {
                           if (widget.productId != null) {
+                            _controller.pause();
                             Navigator.pushNamed(
                               context, 
                               RouteNames.productDetailsPage,
@@ -605,7 +381,6 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Name and Avatar Row
                             Row(
                               children: [
                                 CircleAvatar(
@@ -629,9 +404,8 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            // Description
                             Text(
-                              widget.description ?? 'Product description that can be longer and more detailed...',
+                              widget.description ?? 'Product description...',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -668,7 +442,6 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
               ),
             ),
             
-            // Progress Bar
             Positioned(
               bottom: 0,
               left: 0,

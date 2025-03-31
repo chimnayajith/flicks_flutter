@@ -65,41 +65,6 @@ class ProductService {
     }
   }
 
-  // Get filtered products
-  Future<List<Product>> getFilteredProducts({
-    String? gender,
-    String? ageGroup,
-    String? category,
-  }) async {
-    try {
-      // Build query parameters
-      final queryParams = <String, String>{};
-      if (gender != null) queryParams['gender'] = gender;
-      if (ageGroup != null) queryParams['age_group'] = ageGroup;
-      if (category != null) queryParams['category'] = category;
-
-      final uri = Uri.parse('$baseUrl/api/products/filter/')
-          .replace(queryParameters: queryParams);
-
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        uri,
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final productsResponse = ProductsResponse.fromJson(data);
-        return productsResponse.products;
-      } else {
-        throw Exception('Failed to load filtered products: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching filtered products: $e');
-      return []; // Return empty list on error
-    }
-  }
-
   // Get product details
   Future<Product> getProductDetails(int productId) async {
     try {
@@ -122,25 +87,128 @@ class ProductService {
   }
 
   Future<List<String>> getProductCategories() async {
-  try {
-    final headers = await _getAuthHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/products/categories/'),
-      headers: headers,
-    );
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/products/categories/'),
+        headers: headers,
+      );
 
-    if (response.statusCode == 200) {
-      // Parse the response
-      final List<dynamic> data = jsonDecode(response.body);
-      
-      // Convert the dynamic list to a list of strings
-      return data.map((category) => category.toString()).toList();
-    } else {
-      throw Exception('Failed to load categories: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        // Parse the response
+        final List<dynamic> data = jsonDecode(response.body);
+        
+        // Convert the dynamic list to a list of strings
+        return data.map((category) => category.toString()).toList();
+      } else {
+        throw Exception('Failed to load categories: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching categories: $e');
+      throw Exception('Error fetching categories: $e');
     }
-  } catch (e) {
-    print('Error fetching categories: $e');
-    throw Exception('Error fetching categories: $e');
+  }
+
+  Future<List<String>> getAgeGroups() async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/products/age_groups/'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the response
+        final List<dynamic> data = jsonDecode(response.body);
+        
+        // Convert the dynamic list to a list of strings
+        return data.map((category) => category.toString()).toList();
+      } else {
+        throw Exception('Failed to load age groups: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching age groups: $e');
+      throw Exception('Error fetching age groups: $e');
+    }
+  }
+
+  Future<List<Product>> getFilteredProducts({
+    String? gender,
+    String? ageGroup,
+    String? category,
+  }) async {
+    try {
+      // Build query parameters
+      final queryParams = <String, String>{};
+      if (gender != null && gender != 'All') {
+        if (gender == 'Boys') {
+          queryParams['gender'] = 'M';
+        } else if (gender == 'Girls') {
+          queryParams['gender'] = 'F';
+        } else if (gender == 'Unisex') {
+          queryParams['gender'] = 'U';
+        }
+      }
+      
+      if (ageGroup != null) queryParams['age_group'] = ageGroup;
+      if (category != null) queryParams['category'] = category;
+
+      print('Querying with params: $queryParams');
+      
+      final uri = Uri.parse('$baseUrl/api/products/filter/')
+          .replace(queryParameters: queryParams);
+          
+      print('Requesting URL: ${uri.toString()}');
+
+      final headers = await _getAuthHeaders();
+      final response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        final productsResponse = ProductsResponse.fromJson(data);
+        return productsResponse.products;
+      } else {
+        throw Exception('Failed to load filtered products: ${response.statusCode}');
+      }
+    } catch (e) {
+      return []; // Return empty list on error
+    }
+  }
+
+  Future<List<Product>> getAllProducts({int page = 1, int pageSize = 10}) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final queryParams = {
+        'page': page.toString(),
+        'page_size': pageSize.toString(),
+      };
+      
+      final uri = Uri.parse('$baseUrl/api/products/')
+          .replace(queryParameters: queryParams);
+      
+      print('Requesting all products: ${uri.toString()}');
+      
+      final response = await http.get(
+        uri,
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final productsResponse = ProductsResponse.fromJson(data);
+        return productsResponse.products;
+      } else {
+        print('Failed to load products: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+      return [];
+    }
   }
 }
-}
+

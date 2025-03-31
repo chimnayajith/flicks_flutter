@@ -6,7 +6,7 @@ import 'package:toys_catalogue/routes/route_names.dart';
 class FlickCard extends StatelessWidget {
   final String imageUrl;
   final String? title;
-  final String? id; // Add product ID parameter
+  final String? id;
   final String? videoUrl;
   final String? source;
   final String? description;
@@ -26,8 +26,7 @@ class FlickCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (id != null) {
-          // Navigate to flicks page with product ID
-          print(description);
+          print(title);
           Navigator.pushNamed(
             context, 
             RouteNames.flicksPage,
@@ -38,10 +37,10 @@ class FlickCard extends StatelessWidget {
               'title': title,
               'imageUrl': imageUrl,
               'description': description,
+              'enableSectionScroll': true, 
             },
           );
         } else {
-          // Fall back to old behavior if no ID
           final mainPageState = context.findAncestorStateOfType<MainPageState>();
           if (mainPageState != null) {
             mainPageState.pageController.jumpToPage(3);

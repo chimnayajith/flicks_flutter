@@ -7,7 +7,9 @@ import 'package:toys_catalogue/features/home/presentation/widgets/search_box.dar
 import 'package:toys_catalogue/features/home/presentation/widgets/sorting_options_widget.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/top_products_widget.dart';
 import 'package:toys_catalogue/features/home/presentation/widgets/trending_toys.dart';
+import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
+import 'package:toys_catalogue/routes/route_names.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -114,7 +116,7 @@ class _HomePageState extends State<HomePage> {
               DrawerHeader(
                 decoration: BoxDecoration(color: ColorsClass.secondaryTheme),
                 child: const Text(
-                  'Menu',
+                  'Flicks',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 32,
@@ -138,7 +140,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       onTap: () {
-                        // Handle My Store action
+                        Navigator.pop(context);
+          
+                        final mainPageState = context.findAncestorStateOfType<MainPageState>();
+                        if (mainPageState != null) {
+                          mainPageState.pageController.jumpToPage(1);
+                        }
                       },
                     ),
                     ListTile(
@@ -151,7 +158,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       onTap: () {
-                        // Handle Manage My Store action
+                        Navigator.pop(context);
+          
+                        final mainPageState = context.findAncestorStateOfType<MainPageState>();
+                        if (mainPageState != null) {
+                          mainPageState.pageController.jumpToPage(1);
+                        }
                       },
                     ),
                     ListTile(
@@ -164,7 +176,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       onTap: () {
-                        // Handle Distributors action
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, RouteNames.distributorsPage);
                       },
                     ),
                     ListTile(
@@ -177,7 +190,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       onTap: () {
-                        // Handle Brands action
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, RouteNames.brands);
                       },
                     ),
                   ],
@@ -197,7 +211,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     onTap: () {
-                      // Handle My Subscription action
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, RouteNames.subscriptionsPage);
                     },
                   ),
                   ListTile(
@@ -210,7 +225,14 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     onTap: () {
-                      // Handle Contacts action
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Contact functionality coming soon'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -227,12 +249,6 @@ class _HomePageState extends State<HomePage> {
             children: [
               if (shopBannerUrl != null) StoreBanner(imageUrl: shopBannerUrl!),
 
-              if (shopBannerUrl == null)
-                StoreBanner(
-                  imageUrl: 'https://via.placeholder.com/1000x250?text=Welcome',
-                ),
-
-              // Loading state
               if (isLoading)
                 Center(
                   child: Padding(

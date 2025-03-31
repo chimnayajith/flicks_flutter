@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/features/manage_store/domain/models/shop_model.dart';
 import 'package:toys_catalogue/features/my_profile/data/profile_service.dart';
 import 'package:toys_catalogue/resources/theme.dart';
@@ -244,7 +245,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                       ),
                                       ElevatedButton(
                                         onPressed: () {
-                                          Navigator.pushNamed(context, RouteNames.manageStorePage);
+                                          final mainPageState = context.findAncestorStateOfType<MainPageState>();
+                                          if (mainPageState != null) {
+                                            mainPageState.pageController.jumpToPage(1);
+                                          } else {
+                                            Navigator.pushNamed(context, RouteNames.manageStorePage);
+                                          }
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: ColorsClass.secondaryTheme,

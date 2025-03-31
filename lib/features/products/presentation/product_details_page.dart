@@ -194,8 +194,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     
                     // Category and Age Group
                     Wrap(
-                      spacing: 8, // horizontal space between chips
-                      runSpacing: 8, // vertical space between lines
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         _buildInfoChip('Category: ${_product?.productCategory ?? 'N/A'}'),
                         _buildInfoChip('Age: ${_product?.ageGroup ?? 'N/A'}'),
