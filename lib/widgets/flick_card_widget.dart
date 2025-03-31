@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toys_catalogue/features/flicks/presentation/flicks_page.dart';
 import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
 import 'package:toys_catalogue/routes/route_names.dart';
@@ -26,24 +27,31 @@ class FlickCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (id != null) {
-          print(title);
-          Navigator.pushNamed(
-            context, 
-            RouteNames.flicksPage,
-            arguments: {
-              'productId': id,
-              'videoUrl': videoUrl,
-              'source': source,
-              'title': title,
-              'imageUrl': imageUrl,
-              'description': description,
-              'enableSectionScroll': true, 
-            },
-          );
-        } else {
+          // Find MainPageState
           final mainPageState = context.findAncestorStateOfType<MainPageState>();
+          
+          // Save the arguments in a global variable or use a state management solution
+          // For simplicity, we'll use a static variable in FlicksPage
+          FlicksPage.pendingArgs = {
+            'productId': id,
+            'videoUrl': videoUrl,
+            'source': source,
+            'title': title,
+            'imageUrl': imageUrl,
+            'description': description,
+            'enableSectionScroll': true,
+          };
+          
           if (mainPageState != null) {
+            // If already in MainPage, jump to Flicks tab (index 3)
             mainPageState.pageController.jumpToPage(3);
+          } else {
+            // If not in MainPage, navigate to MainPage with Flicks tab selected
+            Navigator.pushReplacementNamed(
+              context,
+              RouteNames.mainPage,
+              arguments: {'initialIndex': 3},
+            );
           }
         }
       },
