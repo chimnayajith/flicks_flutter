@@ -7,15 +7,24 @@ import 'package:toys_catalogue/features/my_profile/presentation/my_profile_page.
 import 'package:toys_catalogue/resources/theme.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int initialIndex;
+  
+  const MainPage({Key? key, this.initialIndex = 0}) : super(key: key);
 
   @override
   MainPageState createState() => MainPageState();
 }
 
 class MainPageState extends State<MainPage> {
-  final PageController pageController = PageController();
+  late PageController pageController;
   int selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedIndex = widget.initialIndex;
+    pageController = PageController(initialPage: selectedIndex);
+  }
 
   @override
   Widget build(BuildContext context) {

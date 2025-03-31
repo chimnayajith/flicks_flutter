@@ -8,6 +8,7 @@ import 'package:toys_catalogue/features/distributors_page/presentation/nearby_di
 import 'package:toys_catalogue/features/home/presentation/home_page.dart';
 import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/features/my_staff/presentation/my_staff.dart';
+import 'package:toys_catalogue/features/splash/presentation/splash_screen.dart';
 import 'package:toys_catalogue/features/subscription/presentation/subscription_page.dart';
 import 'package:toys_catalogue/features/manage_store/presentation/manage_store_page.dart';
 import 'package:toys_catalogue/features/manage_store/presentation/my_inventory_page.dart';
@@ -19,6 +20,8 @@ import 'package:flutter/material.dart';
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case RouteNames.splash:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
       case RouteNames.login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case RouteNames.register:

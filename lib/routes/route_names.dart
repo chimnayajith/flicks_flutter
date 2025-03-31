@@ -3,6 +3,7 @@ class RouteNames {
   // example : static const String signIn = "sign_in";
   // add route names:
   // example : static const String signIn = "sign_in";
+  static const String splash = "/";
   static const String login = "login";
   static const String register = "register";
   static const String mainPage = "mainPage";
