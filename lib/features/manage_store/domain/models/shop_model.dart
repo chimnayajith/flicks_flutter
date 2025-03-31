@@ -1,24 +1,24 @@
 class Shop {
   final int id;
   final String name;
-  final String description;
+  final String? description;
   final String address;
   final String phone;
   final String email;
   final String? bannerUrl;
-  final ShopOwner owner;
+  final ShopOwner? owner;
   final Subscription? subscription;
   final bool isOwner;
 
   Shop({
     required this.id,
     required this.name,
-    required this.description,
+    this.description,
     required this.address,
     required this.phone,
     required this.email,
     this.bannerUrl,
-    required this.owner,
+    this.owner,
     this.subscription,
     required this.isOwner,
   });
@@ -32,10 +32,8 @@ class Shop {
       phone: json['phone'],
       email: json['email'],
       bannerUrl: json['banner_url'],
-      owner: ShopOwner.fromJson(json['owner']),
-      subscription: json['subscription'] != null 
-          ? Subscription.fromJson(json['subscription']) 
-          : null,
+      owner: json['owner'] != null ? ShopOwner.fromJson(json['owner']) : null,
+      subscription: json['subscription'] != null ? Subscription.fromJson(json['subscription']) : null,
       isOwner: json['is_owner'] ?? false,
     );
   }
@@ -44,12 +42,12 @@ class Shop {
 class ShopOwner {
   final int id;
   final String username;
-  final String name;
+  final String? name;
 
   ShopOwner({
     required this.id,
     required this.username,
-    required this.name,
+    this.name,
   });
 
   factory ShopOwner.fromJson(Map<String, dynamic> json) {
@@ -62,30 +60,21 @@ class ShopOwner {
 }
 
 class Subscription {
-  final int id;
-  final String name;
-  final String description;
-  final DateTime startDate;
-  final DateTime endDate;
-  final int daysRemaining;
+  final String plan;
+  final int? daysRemaining;
+  final String? expiryDate;
 
   Subscription({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.startDate,
-    required this.endDate,
-    required this.daysRemaining,
+    required this.plan,
+    this.daysRemaining,
+    this.expiryDate,
   });
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
     return Subscription(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      startDate: DateTime.parse(json['start_date']),
-      endDate: DateTime.parse(json['end_date']),
-      daysRemaining: json['days_remaining'] ?? 0,
+      plan: json['plan'] ?? 'Free',
+      daysRemaining: json['days_remaining'],
+      expiryDate: json['expiry_date'],
     );
   }
 }
