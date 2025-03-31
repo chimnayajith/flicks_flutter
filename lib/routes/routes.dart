@@ -1,4 +1,5 @@
 import 'package:toys_catalogue/features/auth/presentation/login_page.dart';
+import 'package:toys_catalogue/features/auth/presentation/register_shop_page.dart';
 import 'package:toys_catalogue/features/flicks/presentation/flicks_page.dart';
 import 'package:toys_catalogue/features/all_distributors/presentation/all_distributor_page.dart';
 import 'package:toys_catalogue/features/brands/presentation/brands_page.dart';
@@ -20,6 +21,8 @@ class Routes {
     switch (settings.name) {
       case RouteNames.login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
+      case RouteNames.register:
+        return MaterialPageRoute(builder: (_) => const RegisterPage());
       case RouteNames.mainPage:
         return MaterialPageRoute(builder: (_) => MainPage());
       case RouteNames.homePage:

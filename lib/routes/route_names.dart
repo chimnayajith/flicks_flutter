@@ -4,6 +4,7 @@ class RouteNames {
   // add route names:
   // example : static const String signIn = "sign_in";
   static const String login = "login";
+  static const String register = "register";
   static const String mainPage = "mainPage";
   static const String homePage = "homePage";
   static const String flicksPage = "flicksPage";

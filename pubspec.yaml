@@ -41,6 +41,7 @@ dependencies:
   video_player: ^2.9.2
   carousel_slider: ^5.0.0
   shared_preferences: ^2.5.2
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
