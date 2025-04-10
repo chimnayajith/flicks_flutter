@@ -9,7 +9,8 @@ class Product {
   final String? manufacturerName;
   final String? imageUrl;
   final String? videoUrl;
-  final List<ProductImage>? images;
+  final List<ProductImage>? images; // Keep for backwards compatibility
+  final List<GalleryItem>? gallery; // Added for product details response
 
   Product({
     required this.id,
@@ -23,9 +24,24 @@ class Product {
     this.imageUrl,
     this.videoUrl,
     this.images,
+    this.gallery,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    // Parse gallery items first from either 'gallery' or 'gallery_items'
+    List<GalleryItem>? gallery;
+    
+    if (json['gallery'] != null) {
+      gallery = (json['gallery'] as List)
+          .map((item) => GalleryItem.fromJson(item, fieldPrefix: ''))
+          .toList();
+    } else if (json['gallery_items'] != null) {
+      gallery = (json['gallery_items'] as List)
+          .map((item) => GalleryItem.fromJson(item, fieldPrefix: 'media_'))
+          .toList();
+    }
+    
+    // Legacy parsing for 'images' field
     List<ProductImage>? images;
     if (json['images'] != null) {
       images = (json['images'] as List)
@@ -45,10 +61,48 @@ class Product {
       imageUrl: json['image_url'],
       videoUrl: json['video_url'],
       images: images,
+      gallery: gallery,
     );
   }
 }
 
+// Add new GalleryItem class
+class GalleryItem {
+  final int id;
+  final String type; // 'image' or 'video'
+  final bool isPrimary;
+  final String? altText;
+  final int displayOrder;
+  final String url;
+  final int? duration; // For videos only
+
+  GalleryItem({
+    required this.id,
+    required this.type,
+    required this.isPrimary,
+    this.altText,
+    required this.displayOrder,
+    required this.url,
+    this.duration,
+  });
+
+  factory GalleryItem.fromJson(Map<String, dynamic> json, {String fieldPrefix = ''}) {
+    // Handle different field names between detail and list responses
+    final typeField = fieldPrefix + 'type'; // 'type' or 'media_type'
+    
+    return GalleryItem(
+      id: json['id'],
+      type: json[typeField] ?? 'image',
+      isPrimary: json['is_primary'] ?? false,
+      altText: json['alt_text'],
+      displayOrder: json['display_order'] ?? 0,
+      url: json['url'],
+      duration: json['duration'],
+    );
+  }
+}
+
+// Keep existing ProductImage class for backward compatibility
 class ProductImage {
   final int id;
   final String image;

@@ -58,19 +58,55 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         _product = product;
         _isLoading = false;
         
-        // Initialize images from the product - Fix null safety issues
-        if (_product?.images != null && _product!.images!.isNotEmpty) {
-          _images = _product!.images!.map((img) => {
-            'image': img.image,
-            'is_primary': img.isPrimary,
-            'alt_text': img.altText
+        // Clear previous images array
+        _images = [];
+        
+        // Try to use gallery items first (new API format)
+        if (_product?.gallery != null && _product!.gallery!.isNotEmpty) {
+          _images = _product!.gallery!.map((item) => {
+            'type': item.type,
+            'url': item.url,
+            'is_primary': item.isPrimary,
+            'alt_text': item.altText ?? '',
+            'display_order': item.displayOrder,
+            'duration': item.duration
           }).toList();
+        }
+        // Fall back to legacy images field if gallery is empty
+        else if (_product?.images != null && _product!.images!.isNotEmpty) {
+          _images = _product!.images!.map((img) => {
+            'type': 'image',
+            'url': img.image,
+            'is_primary': img.isPrimary,
+            'alt_text': img.altText ?? '',
+            'display_order': 0
+          }).toList();
+        }
+        // Use imageUrl as last resort
+        else if (_product?.imageUrl != null && _product!.imageUrl!.isNotEmpty) {
+          _images = [{
+            'type': 'image',
+            'url': _product!.imageUrl!,
+            'is_primary': true,
+            'alt_text': _product!.title,
+            'display_order': 0
+          }];
         }
       });
 
-      // Initialize video player if there's a video - Fix null safety issues
+      // Initialize video player if there's a video
       if (_product?.videoUrl != null && _product!.videoUrl!.isNotEmpty) {
         _initializeVideoPlayer(_product!.videoUrl!);
+      } else {
+        // Check if there's a video in the gallery
+        final videoItem = _images.firstWhere(
+          (item) => item['type'] == 'video', 
+          orElse: () => <String, dynamic>{}
+        );
+        
+        if (videoItem.isNotEmpty && videoItem['url'] != null) {
+          _initializeVideoPlayer(videoItem['url']);
+        }
       }
     } catch (e) {
       setState(() {
@@ -82,22 +118,36 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   void _initializeVideoPlayer(String videoUrl) {
+    _videoController?.dispose(); 
     _videoController = VideoPlayerController.network(videoUrl);
     _videoController!.initialize().then((_) {
-      setState(() {}); // Refresh UI when video is ready
+      _videoController!.seekTo(Duration.zero);
+      
+      if (mounted) {
+        setState(() {
+        });
+        
+        Future.delayed(Duration(milliseconds: 300), () {
+          if (mounted) {
+            _videoController!.play();
+          }
+        });
+      }
     });
   }
 
   void _toggleVideoPlayback() {
+    if (_videoController == null) return;
+    
     setState(() {
-      _isPlayingVideo = !_isPlayingVideo;
-      if (_isPlayingVideo) {
-        _videoController?.play();
+      if (_videoController!.value.isPlaying) {
+        _videoController!.pause();
       } else {
-        _videoController?.pause();
+        _videoController!.play();
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -119,9 +169,17 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             IconButton(
               icon: const Icon(Icons.play_circle_outline, color: ColorsClass.secondaryTheme),
               onPressed: () {
-                setState(() {
-                  _isPlayingVideo = true;
-                });
+                // Find the index of the first video in the gallery
+                int videoIndex = _images.indexWhere((item) => item['type'] == 'video');
+                if (videoIndex >= 0) {
+                  // Set the carousel to that index
+                  setState(() {
+                    _currentImageIndex = videoIndex;
+                  });
+                } else {
+                  // If no gallery video, initialize the main video
+                  _initializeVideoPlayer(_product!.videoUrl!);
+                }
               },
             ),
         ],
@@ -267,134 +325,213 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             ],
           ),
         ),
-        
-        // Video Player Overlay
-        if (_isPlayingVideo && _videoController != null && _videoController!.value.isInitialized)
-          _buildVideoPlayerOverlay(),
       ],
     );
   }
 
-  Widget _buildImageCarousel() {
-    // If no images and no primary image, show placeholder
-    if (_images.isEmpty && (_product?.imageUrl == null || _product!.imageUrl!.isEmpty)) {
-      return Container(
-        height: 300,
-        color: Colors.grey[200],
-        child: const Center(
-          child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-        ),
-      );
-    }
-
-    // If we have the image array, use it
-    if (_images.isNotEmpty) {
-      return Column(
-        children: [
-          CarouselSlider(
-            options: CarouselOptions(
-              height: 300,
-              viewportFraction: 1.0,
-              enableInfiniteScroll: false,
-              onPageChanged: (index, reason) {
-                setState(() {
-                  _currentImageIndex = index;
-                });
-              },
-            ),
-            items: _images.map((item) {
-              return Builder(
-                builder: (BuildContext context) {
-                  return Container(
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                    ),
-                    child: Image.network(
-                      item['image'],
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                        );
-                      },
-                    ),
-                  );
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: _images.asMap().entries.map((entry) {
-              return Container(
-                width: 8,
-                height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentImageIndex == entry.key
-                      ? ColorsClass.secondaryTheme
-                      : Colors.grey[350],
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      );
-    }
-
-    // Fallback to single image from imageUrl
+ Widget _buildImageCarousel() {
+  if (_images.isEmpty) {
     return Container(
       height: 300,
-      width: double.infinity,
       color: Colors.grey[200],
-      child: Image.network(
-        _product!.imageUrl!,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-          );
-        },
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
       ),
     );
   }
 
-  Widget _buildVideoPlayerOverlay() {
-    return Positioned.fill(
-      child: GestureDetector(
-        onTap: _toggleVideoPlayback,
-        child: Container(
-          color: Colors.black,
-          child: Stack(
-            children: [
-              // Video
-              Center(
-                child: AspectRatio(
-                  aspectRatio: _videoController!.value.aspectRatio,
-                  child: VideoPlayer(_videoController!),
-                ),
-              ),
+  return Column(
+    children: [
+      CarouselSlider(
+        options: CarouselOptions(
+          height: 300,
+          viewportFraction: 1.0,
+          enableInfiniteScroll: _images.length > 1,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentImageIndex = index;
               
-              // Close button
-              Positioned(
-                top: 16,
-                right: 16,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                  onPressed: () {
-                    setState(() {
-                      _isPlayingVideo = false;
-                      _videoController?.pause();
-                    });
+              // Pause any playing video when carousel changes
+              if (_videoController != null && _videoController!.value.isInitialized) {
+                _videoController!.pause();
+              }
+              
+              // If the new slide is a video, initialize the player
+              if (_images[index]['type'] == 'video') {
+                _initializeVideoPlayer(_images[index]['url']);
+              }
+            });
+          },
+        ),
+        items: _images.map((item) {
+          return Builder(
+            builder: (BuildContext context) {
+              // For video type items
+              if (item['type'] == 'video') {
+                // Check if this is the current video and controller is initialized
+                bool isCurrentVideo = _currentImageIndex == _images.indexOf(item);
+                
+                if (isCurrentVideo && _videoController != null && _videoController!.value.isInitialized) {
+                  // Show actual video player for current slide with the first frame as thumbnail
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Video player that shows the first frame as thumbnail
+                      AspectRatio(
+                        aspectRatio: _videoController!.value.aspectRatio,
+                        child: VideoPlayer(_videoController!),
+                      ),
+                      
+                      // Play/pause overlay
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            if (_videoController!.value.isPlaying) {
+                              _videoController!.pause();
+                            } else {
+                              _videoController!.play();
+                            }
+                          });
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          child: Center(
+                            child: AnimatedOpacity(
+                              opacity: _videoController!.value.isPlaying ? 0.0 : 1.0,
+                              duration: const Duration(milliseconds: 300),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.black45,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Video progress at bottom
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: VideoProgressIndicator(
+                          _videoController!,
+                          allowScrubbing: true,
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          colors: VideoProgressColors(
+                            playedColor: ColorsClass.secondaryTheme,
+                            bufferedColor: Colors.white.withOpacity(0.5),
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Show loading indicator while video initializes
+                  return Container(
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(color: Colors.black),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: ColorsClass.secondaryTheme,
+                      ),
+                    ),
+                  );
+                }
+              }
+              
+              // For image type items (unchanged)
+              return Container(
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                ),
+                child: Image.network(
+                  item['url'] ?? '',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                    );
                   },
                 ),
+              );
+            },
+          );
+        }).toList(),
+      ),
+      if (_images.length > 1) ...[
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: _images.asMap().entries.map((entry) {
+            return Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _currentImageIndex == entry.key
+                    ? ColorsClass.secondaryTheme
+                    : Colors.grey[350],
               ),
-              
-              // Play/Pause indicator
-              Center(
+            );
+          }).toList(),
+        ),
+      ],
+    ],
+  );
+}
+
+  Widget _buildVideoPlayerOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black,
+        child: Stack(
+          children: [
+            // Video
+            Center(
+              child: AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio,
+                child: VideoPlayer(_videoController!),
+              ),
+            ),
+            
+            // Close button
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () {
+                  setState(() {
+                    _isPlayingVideo = false;
+                    _videoController?.pause();
+                  });
+                },
+              ),
+            ),
+            
+            // Play/Pause button
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (_videoController!.value.isPlaying) {
+                    _videoController!.pause();
+                  } else {
+                    _videoController!.play();
+                  }
+                });
+              },
+              child: Center(
                 child: AnimatedOpacity(
                   opacity: _videoController!.value.isPlaying ? 0.0 : 1.0,
                   duration: const Duration(milliseconds: 300),
@@ -412,8 +549,25 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            
+            // Video progress indicator at bottom
+            Positioned(
+              bottom: 20,
+              left: 16,
+              right: 16,
+              child: VideoProgressIndicator(
+                _videoController!,
+                allowScrubbing: true,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                colors: VideoProgressColors(
+                  playedColor: ColorsClass.secondaryTheme,
+                  bufferedColor: Colors.white.withOpacity(0.5),
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
