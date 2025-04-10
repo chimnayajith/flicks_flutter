@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:toys_catalogue/features/home/data/product_service.dart';
+import 'package:toys_catalogue/features/flicks/data/flicks_analytics_service.dart';
 import 'package:toys_catalogue/features/home/domain/models/product_model.dart';
 import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/resources/theme.dart';
@@ -376,12 +377,15 @@ class NetworkVideoPage extends StatefulWidget {
   @override
   _NetworkVideoPageState createState() => _NetworkVideoPageState();
 }
-class _NetworkVideoPageState extends State<NetworkVideoPage> {
+class _NetworkVideoPageState extends State<NetworkVideoPage> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
   bool _isDragging = false;
   final double _dragThreshold = 50.0;
   double _dragDistance = 0.0;
+  final FlicksAnalyticsService _analyticsService = FlicksAnalyticsService();
+  String? _sessionId;
+  DateTime? _viewStartTime;
 
   @override
   void initState() {
@@ -390,14 +394,64 @@ class _NetworkVideoPageState extends State<NetworkVideoPage> {
     _initializeVideoPlayerFuture = _controller.initialize();
     _controller.setLooping(true);
     _controller.play();
+    
+    // Register for app lifecycle events
+    WidgetsBinding.instance.addObserver(this);
+
+    if (widget.productId != null) {
+      _startTracking();
+    }
+  }
+
+  Future<void> _startTracking() async {
+    try {
+      final response = await _analyticsService.startVideoView(widget.productId!);
+      _sessionId = response['session_id'];
+      _viewStartTime = DateTime.parse(response['start_time']);
+    } catch (e) {
+      print('Error starting view tracking: $e');
+    }
   }
 
   @override
   void dispose() {
+    _endTracking();
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
   }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // End tracking if app is backgrounded or terminated
+    if (state == AppLifecycleState.paused || 
+        state == AppLifecycleState.detached) {
+      _endTracking();
+    }
+  }
 
+  Future<void> _endTracking() async {
+    if (_sessionId != null && widget.productId != null) {
+      final position = _controller.value.position.inSeconds;
+      final duration = _controller.value.duration.inSeconds;
+      
+      // Calculate percentage watched
+      final percentWatched = duration > 0 
+          ? ((position / duration) * 100).round() 
+          : 0;
+      
+      try {
+        await _analyticsService.endVideoView(
+          sessionId: _sessionId!,
+          duration: position,
+          percentWatched: percentWatched,
+        );
+      } catch (e) {
+        print('Error ending view tracking: $e');
+      }
+    }
+  }
+  
   void _togglePlayPause() {
     setState(() {
       if (_controller.value.isPlaying) {
