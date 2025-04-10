@@ -1,35 +1,21 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:toys_catalogue/utils/api/api_client.dart';
 import 'package:toys_catalogue/features/manage_store/domain/models/shop_model.dart';
-import 'package:toys_catalogue/constants/constants.dart';
 
 class ShopService {
-  final String baseUrl = apiURL;
+  final ApiClient _apiClient = ApiClient();
 
-  Future<Map<String, String>> _getAuthHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
-  Future<Shop> getShopDetails() async {
+  Future<Shop> getShopDetails({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/store/'),
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/store/',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return Shop.fromJson(data);
+      if (response != null) {
+        return Shop.fromJson(response);
       } else {
-        throw Exception('Failed to load shop details: ${response.statusCode}');
+        throw Exception('Failed to load shop details');
       }
     } catch (e) {
       print('Error fetching shop details: $e');
@@ -37,28 +23,48 @@ class ShopService {
     }
   }
 
-  // For development/testing
-  Future<Shop> getMockShopDetails() async {
-    // Mock data matching the provided JSON
-    final mockData = {
-      "id": 1,
-      "name": "Thambi kada",
-      "description": "Vallikavu's best toys. One stop shop for all things toys.",
-      "address": "Vallikavu junction, Karunagappally",
-      "phone": "9495483360",
-      "email": "thambi@gmail.com",
-      "banner_url": "https://flickscatalogue.s3.amazonaws.com/shops/banners/thambikada.jpg",
-      "owner": {
-        "id": 2,
-        "username": "thambi",
-        "name": "thambi"
-      },
-      "subscription": null,
-      "is_owner": true
-    };
-    
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    return Shop.fromJson(mockData);
+  Future<Shop> updateShopDetails({
+    required Map<String, dynamic> shopData,
+    BuildContext? context,
+  }) async {
+    try {
+      final response = await _apiClient.put(
+        '/api/store/',
+        body: shopData,
+        context: context,
+      );
+
+      if (response != null) {
+        return Shop.fromJson(response);
+      } else {
+        throw Exception('Failed to update shop details');
+      }
+    } catch (e) {
+      print('Error updating shop details: $e');
+      throw Exception('Error updating shop details: $e');
+    }
+  }
+  
+  Future<Map<String, dynamic>> uploadShopBanner({
+    required String filePath,
+    BuildContext? context,
+  }) async {
+    // Note: For file uploads, you would need to extend ApiClient
+    // to support multipart requests or handle this separately
+    throw UnimplementedError('File upload not yet implemented');
+  }
+  
+  Future<bool> deleteShopBanner({BuildContext? context}) async {
+    try {
+      final response = await _apiClient.delete(
+        '/api/store/banner/',
+        context: context,
+      );
+      
+      return response != null;
+    } catch (e) {
+      print('Error deleting shop banner: $e');
+      return false;
+    }
   }
 }

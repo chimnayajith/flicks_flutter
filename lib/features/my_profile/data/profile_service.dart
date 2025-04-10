@@ -1,40 +1,21 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:toys_catalogue/constants/constants.dart';
+import 'package:flutter/material.dart';
+import 'package:toys_catalogue/utils/api/api_client.dart';
 import 'package:toys_catalogue/features/manage_store/domain/models/shop_model.dart';
 
 class ProfileService {
-  final String _baseUrl = apiURL;
-  
-  Future<Map<String, String>> _getAuthHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-    
-    if (token == null) {
-      throw Exception('Authentication token not found');
-    }
-    
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
+  final ApiClient _apiClient = ApiClient();
 
-  Future<Map<String, dynamic>> getUserProfile() async {
+  Future<Map<String, dynamic>> getUserProfile({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/profile/'), 
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/profile/',
+        context: context,
       );
       
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
+      if (response != null) {
+        return response;
       } else {
-        print('Failed to load user profile: ${response.statusCode}, ${response.body}');
-        throw Exception('Failed to load user profile: ${response.statusCode}');
+        throw Exception('Failed to load user profile');
       }
     } catch (e) {
       print('Error fetching user profile: $e');
@@ -42,24 +23,65 @@ class ProfileService {
     }
   }
 
-  Future<Shop> getShopDetails() async {
+  Future<Shop> getShopDetails({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/store/'), 
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/store/',
+        context: context,
       );
       
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return Shop.fromJson(data);
+      if (response != null) {
+        return Shop.fromJson(response);
       } else {
-        print('Failed to load shop details: ${response.statusCode}, ${response.body}');
-        throw Exception('Failed to load shop details: ${response.statusCode}');
+        throw Exception('Failed to load shop details');
       }
     } catch (e) {
+      print('Error fetching shop details: $e');
       throw Exception('Error fetching shop details: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUserProfile({
+    required Map<String, dynamic> profileData,
+    BuildContext? context,
+  }) async {
+    try {
+      final response = await _apiClient.put(
+        '/api/profile/',
+        body: profileData,
+        context: context,
+      );
+      
+      if (response != null) {
+        return response;
+      } else {
+        throw Exception('Failed to update user profile');
+      }
+    } catch (e) {
+      print('Error updating user profile: $e');
+      throw Exception('Error updating user profile: $e');
+    }
+  }
+
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    BuildContext? context,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/profile/change-password/',
+        body: {
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        },
+        context: context,
+      );
+      
+      return response != null;
+    } catch (e) {
+      print('Error changing password: $e');
+      throw Exception('Error changing password: $e');
     }
   }
 }

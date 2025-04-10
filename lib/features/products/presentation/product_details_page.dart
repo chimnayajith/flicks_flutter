@@ -57,9 +57,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       setState(() {
         _product = product;
         _isLoading = false;
-        // Initialize images from the product
-        if (product.images != null && product.images!.isNotEmpty) {
-          _images = product.images!.map((img) => {
+        
+        // Initialize images from the product - Fix null safety issues
+        if (_product?.images != null && _product!.images!.isNotEmpty) {
+          _images = _product!.images!.map((img) => {
             'image': img.image,
             'is_primary': img.isPrimary,
             'alt_text': img.altText
@@ -67,9 +68,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         }
       });
 
-      // Initialize video player if there's a video
-      if (product.videoUrl != null && product.videoUrl!.isNotEmpty) {
-        _initializeVideoPlayer(product.videoUrl!);
+      // Initialize video player if there's a video - Fix null safety issues
+      if (_product?.videoUrl != null && _product!.videoUrl!.isNotEmpty) {
+        _initializeVideoPlayer(_product!.videoUrl!);
       }
     } catch (e) {
       setState(() {

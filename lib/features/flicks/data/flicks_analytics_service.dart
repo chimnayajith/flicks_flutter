@@ -1,41 +1,24 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:toys_catalogue/constants/constants.dart';
+import 'package:flutter/material.dart';
+import 'package:toys_catalogue/utils/api/api_client.dart';
 
 class FlicksAnalyticsService {
-  final String baseUrl = apiURL;
+  final ApiClient _apiClient = ApiClient();
   
-  // Get headers for authenticated requests
-  Future<Map<String, String>> _getAuthHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accessToken = prefs.getString('access_token');
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $accessToken',
-    };
-  }
-  
-  Future<Map<String, dynamic>> startVideoView(String productId) async {
+  Future<Map<String, dynamic>> startVideoView(String productId, {BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/analytics/start-view/'),
-        headers: headers,
-        body: jsonEncode({
+      final response = await _apiClient.post(
+        '/api/analytics/start-view/',
+        body: {
           'product_id': productId,
-        }),
+        },
+        context: context,
       );
 
-      if (response.statusCode == 201) {
+      if (response != null) {
         print('Video view started for product $productId');
-        return jsonDecode(response.body);
-      } else {
-        print('Failed to start video view: ${response.statusCode}, ${response.body}');
-        return {};
+        return response;
       }
+      return {};
     } catch (e) {
       print('Exception in startVideoView: $e');
       return {};
@@ -46,29 +29,26 @@ class FlicksAnalyticsService {
     required String sessionId,
     required int duration,
     required int percentWatched,
+    BuildContext? context,
   }) async {
     try {
-      final headers = await _getAuthHeaders();
-      
       print('Ending session $sessionId - watched: $duration seconds ($percentWatched%)');
       
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/analytics/end-view/'),
-        headers: headers,
-        body: jsonEncode({
+      final response = await _apiClient.post(
+        '/api/analytics/end-view/',
+        body: {
           'session_id': sessionId,
           'duration': duration,
           'percent_watched': percentWatched,
-        }),
+        },
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        print('Video view ended successfully: ${response.body}');
-        return jsonDecode(response.body);
-      } else {
-        print('Failed to end video view: ${response.statusCode}, ${response.body}');
-        return {};
+      if (response != null) {
+        print('Video view ended successfully');
+        return response;
       }
+      return {};
     } catch (e) {
       print('Exception in endVideoView: $e');
       return {};

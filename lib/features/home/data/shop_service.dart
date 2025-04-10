@@ -1,32 +1,25 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:toys_catalogue/constants/constants.dart';
+import 'package:flutter/material.dart';
+import 'package:toys_catalogue/utils/api/api_client.dart';
 
 class ShopService {
-  final String baseUrl = apiURL;
+  final ApiClient _apiClient = ApiClient();
 
-  Future<Map<String, dynamic>> getShopBanner() async {
+  Future<Map<String, dynamic>> getShopBanner({BuildContext? context}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final accessToken = prefs.getString('access_token');
-      
-      if (accessToken == null) {
-        throw Exception('No access token found');
-      }
-      
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/store/banner/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
+      final response = await _apiClient.get(
+        '/api/store/banner/',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+      if (response != null) {
+        return response;
       } else {
-        throw Exception('Failed to load shop banner: ${response.statusCode}');
+        print('Null response received for shop banner');
+        // Return default values if no response
+        return {
+          'banner_url': null,
+          'shop_name': null
+        };
       }
     } catch (e) {
       print('Error fetching shop banner: $e');
@@ -35,6 +28,41 @@ class ShopService {
         'banner_url': null,
         'shop_name': null
       };
+    }
+  }
+
+  // Add more shop-related API methods here
+  Future<List<dynamic>> getShopCategories({BuildContext? context}) async {
+    try {
+      final response = await _apiClient.get(
+        '/api/store/categories/',
+        context: context,
+      );
+
+      if (response != null) {
+        return response['categories'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching shop categories: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getShopDetails({BuildContext? context}) async {
+    try {
+      final response = await _apiClient.get(
+        '/api/store/details/',
+        context: context,
+      );
+
+      if (response != null) {
+        return response;
+      }
+      return {};
+    } catch (e) {
+      print('Error fetching shop details: $e');
+      return {};
     }
   }
 }

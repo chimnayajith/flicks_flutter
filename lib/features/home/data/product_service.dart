@@ -1,41 +1,26 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:toys_catalogue/constants/constants.dart';
+import 'package:flutter/material.dart';
+import 'package:toys_catalogue/utils/api/api_client.dart';
 import 'package:toys_catalogue/features/home/domain/models/product_model.dart';
 
 class ProductService {
-  final String baseUrl = apiURL;
-
-  // Get headers for authenticated requests
-  Future<Map<String, String>> _getAuthHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final accessToken = prefs.getString('access_token');
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $accessToken',
-    };
-  }
+  final ApiClient _apiClient = ApiClient();
 
   // Get trending products
-  Future<List<Product>> getTrendingProducts() async {
+  Future<List<Product>> getTrendingProducts({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products/trending/'),
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/products/trending/',
+        context: context,
       );
 
-      // Inside getTrendingProducts() method:
-      if (response.statusCode == 200) {
-        print("Raw trending response: ${response.body}");
-        final data = jsonDecode(response.body);
-        final productsResponse = ProductsResponse.fromJson(data);
+      if (response != null) {
+        print("Raw trending response received");
+        final productsResponse = ProductsResponse.fromJson(response);
         print("Parsed trending products count: ${productsResponse.products.length}");
         return productsResponse.products;
-      }  else {
-        throw Exception('Failed to load trending products: ${response.statusCode}');
+      } else {
+        print("Null response received for trending products");
+        return [];
       }
     } catch (e) {
       print('Error fetching trending products: $e');
@@ -44,21 +29,18 @@ class ProductService {
   }
 
   // Get top products
-  Future<List<Product>> getTopProducts() async {
+  Future<List<Product>> getTopProducts({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products/top/'),
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/products/top/',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final productsResponse = ProductsResponse.fromJson(data);
+      if (response != null) {
+        final productsResponse = ProductsResponse.fromJson(response);
         return productsResponse.products;
-      } else {
-        throw Exception('Failed to load top products: ${response.statusCode}');
       }
+      return [];
     } catch (e) {
       print('Error fetching top products: $e');
       return []; // Return empty list on error
@@ -66,69 +48,62 @@ class ProductService {
   }
 
   // Get product details
-  Future<Product> getProductDetails(int productId) async {
+  Future<Product?> getProductDetails(int productId, {BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products/$productId/'),
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/products/$productId/',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return Product.fromJson(data);
-      } else {
-        throw Exception('Failed to load product details: ${response.statusCode}');
+      if (response != null) {
+        return Product.fromJson(response);
       }
+      return null;
     } catch (e) {
       print('Error fetching product details: $e');
-      rethrow; // Rethrow to handle in UI
+      return null;
     }
   }
 
-  Future<List<String>> getProductCategories() async {
+  Future<List<String>> getProductCategories({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products/categories/'),
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/products/categories/',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
+      if (response != null) {
         // Parse the response
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response;
         
         // Convert the dynamic list to a list of strings
         return data.map((category) => category.toString()).toList();
-      } else {
-        throw Exception('Failed to load categories: ${response.statusCode}');
       }
+      return [];
     } catch (e) {
       print('Error fetching categories: $e');
-      throw Exception('Error fetching categories: $e');
+      return [];
     }
   }
 
-  Future<List<String>> getAgeGroups() async {
+  Future<List<String>> getAgeGroups({BuildContext? context}) async {
     try {
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/products/age_groups/'),
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/products/age_groups/',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
+      if (response != null) {
         // Parse the response
-        final List<dynamic> data = jsonDecode(response.body);
+        final List<dynamic> data = response;
         
         // Convert the dynamic list to a list of strings
-        return data.map((category) => category.toString()).toList();
-      } else {
-        throw Exception('Failed to load age groups: ${response.statusCode}');
+        return data.map((ageGroup) => ageGroup.toString()).toList();
       }
+      return [];
     } catch (e) {
       print('Error fetching age groups: $e');
-      throw Exception('Error fetching age groups: $e');
+      return [];
     }
   }
 
@@ -136,6 +111,7 @@ class ProductService {
     String? gender,
     String? ageGroup,
     String? category,
+    BuildContext? context,
   }) async {
     try {
       // Build query parameters
@@ -155,60 +131,51 @@ class ProductService {
 
       print('Querying with params: $queryParams');
       
-      final uri = Uri.parse('$baseUrl/api/products/filter/')
-          .replace(queryParameters: queryParams);
-          
-      print('Requesting URL: ${uri.toString()}');
-
-      final headers = await _getAuthHeaders();
-      final response = await http.get(
-        uri,
-        headers: headers,
+      // Construct endpoint with query parameters
+      String endpoint = '/api/products/filter/';
+      if (queryParams.isNotEmpty) {
+        endpoint += '?';
+        queryParams.forEach((key, value) {
+          endpoint += '$key=$value&';
+        });
+        endpoint = endpoint.substring(0, endpoint.length - 1); // Remove trailing &
+      }
+      
+      final response = await _apiClient.get(
+        endpoint,
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        
-        final productsResponse = ProductsResponse.fromJson(data);
+      if (response != null) {
+        final productsResponse = ProductsResponse.fromJson(response);
         return productsResponse.products;
-      } else {
-        throw Exception('Failed to load filtered products: ${response.statusCode}');
       }
+      return [];
     } catch (e) {
+      print('Error fetching filtered products: $e');
       return []; // Return empty list on error
     }
   }
 
-  Future<List<Product>> getAllProducts({int page = 1, int pageSize = 10}) async {
+  Future<List<Product>> getAllProducts({
+    int page = 1, 
+    int pageSize = 10,
+    BuildContext? context,
+  }) async {
     try {
-      final headers = await _getAuthHeaders();
-      final queryParams = {
-        'page': page.toString(),
-        'page_size': pageSize.toString(),
-      };
-      
-      final uri = Uri.parse('$baseUrl/api/products/')
-          .replace(queryParameters: queryParams);
-      
-      print('Requesting all products: ${uri.toString()}');
-      
-      final response = await http.get(
-        uri,
-        headers: headers,
+      final response = await _apiClient.get(
+        '/api/products/?page=$page&page_size=$pageSize',
+        context: context,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final productsResponse = ProductsResponse.fromJson(data);
+      if (response != null) {
+        final productsResponse = ProductsResponse.fromJson(response);
         return productsResponse.products;
-      } else {
-        print('Failed to load products: ${response.statusCode}');
-        return [];
       }
+      return [];
     } catch (e) {
-      print('Error fetching products: $e');
+      print('Error fetching all products: $e');
       return [];
     }
   }
 }
-
