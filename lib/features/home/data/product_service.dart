@@ -16,7 +16,9 @@ class ProductService {
       if (response != null) {
         print("Raw trending response received");
         final productsResponse = ProductsResponse.fromJson(response);
-        print("Parsed trending products count: ${productsResponse.products.length}");
+        print(
+          "Parsed trending products count: ${productsResponse.products.length}",
+        );
         return productsResponse.products;
       } else {
         print("Null response received for trending products");
@@ -48,7 +50,10 @@ class ProductService {
   }
 
   // Get product details
-  Future<Product?> getProductDetails(int productId, {BuildContext? context}) async {
+  Future<Product?> getProductDetails(
+    int productId, {
+    BuildContext? context,
+  }) async {
     try {
       final response = await _apiClient.get(
         '/api/products/$productId/',
@@ -75,7 +80,7 @@ class ProductService {
       if (response != null) {
         // Parse the response
         final List<dynamic> data = response;
-        
+
         // Convert the dynamic list to a list of strings
         return data.map((category) => category.toString()).toList();
       }
@@ -96,7 +101,7 @@ class ProductService {
       if (response != null) {
         // Parse the response
         final List<dynamic> data = response;
-        
+
         // Convert the dynamic list to a list of strings
         return data.map((ageGroup) => ageGroup.toString()).toList();
       }
@@ -104,6 +109,21 @@ class ProductService {
     } catch (e) {
       print('Error fetching age groups: $e');
       return [];
+    }
+  }
+
+  Future<List<Product>> searchProducts(String query) async {
+    try {
+      final response = await _apiClient.get('/api/products/search/?q=$query');
+
+      if (response == null) {
+        return [];
+      }
+
+      final productsResponse = ProductsResponse.fromJson(response);
+      return productsResponse.products;
+    } catch (e) {
+      throw Exception('Failed to search products');
     }
   }
 
@@ -125,12 +145,12 @@ class ProductService {
           queryParams['gender'] = 'U';
         }
       }
-      
+
       if (ageGroup != null) queryParams['age_group'] = ageGroup;
       if (category != null) queryParams['category'] = category;
 
       print('Querying with params: $queryParams');
-      
+
       // Construct endpoint with query parameters
       String endpoint = '/api/products/filter/';
       if (queryParams.isNotEmpty) {
@@ -138,13 +158,13 @@ class ProductService {
         queryParams.forEach((key, value) {
           endpoint += '$key=$value&';
         });
-        endpoint = endpoint.substring(0, endpoint.length - 1); // Remove trailing &
+        endpoint = endpoint.substring(
+          0,
+          endpoint.length - 1,
+        ); // Remove trailing &
       }
-      
-      final response = await _apiClient.get(
-        endpoint,
-        context: context,
-      );
+
+      final response = await _apiClient.get(endpoint, context: context);
 
       if (response != null) {
         final productsResponse = ProductsResponse.fromJson(response);
@@ -158,7 +178,7 @@ class ProductService {
   }
 
   Future<List<Product>> getAllProducts({
-    int page = 1, 
+    int page = 1,
     int pageSize = 10,
     BuildContext? context,
   }) async {

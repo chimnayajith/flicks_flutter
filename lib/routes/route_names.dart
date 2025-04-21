@@ -9,7 +9,7 @@ class RouteNames {
   static const String mainPage = "mainPage";
   static const String homePage = "homePage";
   static const String flicksPage = "flicksPage";
-  static const String myStaffPage= "myStaffPage";
+  static const String myStaffPage = "myStaffPage";
   static const String subscriptionsPage = "subscriptionsPage";
   static const String pageView = "page_view";
   static const String brands = "brands";
@@ -19,5 +19,7 @@ class RouteNames {
   static const String manageStorePage = "manageStorePage";
   static const String productDetailsPage = "productDetailsPage";
   static const String myRewardsPage = "myRewardsPage";
-  static const String myInventoryPage = "myInventoryPage"; // TODO: Implement later not used now
+  static const String searchPage = "searchPage";
+  static const String myInventoryPage =
+      "myInventoryPage"; // TODO: Implement later not used now
 }

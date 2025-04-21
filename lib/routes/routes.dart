@@ -6,6 +6,7 @@ import 'package:toys_catalogue/features/brands/presentation/brands_page.dart';
 import 'package:toys_catalogue/features/distributors_page/presentation/distributors_page.dart';
 import 'package:toys_catalogue/features/distributors_page/presentation/nearby_distributers_page.dart';
 import 'package:toys_catalogue/features/home/presentation/home_page.dart';
+import 'package:toys_catalogue/features/home/presentation/search_page.dart';
 import 'package:toys_catalogue/features/main/presentation/main_page.dart';
 import 'package:toys_catalogue/features/my_staff/presentation/my_staff.dart';
 import 'package:toys_catalogue/features/splash/presentation/splash_screen.dart';
@@ -60,6 +61,8 @@ class Routes {
         return MaterialPageRoute(builder: (_) => const MyRewardsPage());
       case RouteNames.myInventoryPage:
         return MaterialPageRoute(builder: (_) => const MyInventoryPage());
+      case RouteNames.searchPage:
+        return MaterialPageRoute(builder: (_) => const SearchPage());
       default:
         return MaterialPageRoute(
           builder: (_) {
